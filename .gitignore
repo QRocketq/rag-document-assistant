@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual Environment
+.venv/
+venv/
+
+# Vector DB (can be recreated by running index.py)
+db/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
