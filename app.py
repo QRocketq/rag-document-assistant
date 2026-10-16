@@ -1,12 +1,14 @@
+import os
 import streamlit as st
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.llms import Ollama
-from index import is_db_empty, index_all_documents
+from index import is_db_empty, index_all_documents, index_document
 
 # Проверяем наличие документов в базе, если база пуста индексируем все из папки data\
 if is_db_empty():
     index_all_documents()
+
 # --- 1. Загружаем всё один раз при запуске приложения ---
 # Streamlit перезапускает скрипт при каждом взаимодействии.
 # Чтобы не перезагружать модель и базу каждый раз, используем кэш.
@@ -36,6 +38,20 @@ def c_cleaner():
     st.session_state.messages = []
 
 st.button("Reset", type="primary", on_click = c_cleaner)
+
+# Загрузка файлов пользователем
+uploaded_file = st.file_uploader("Загрузите файл", type=["docx"])
+if uploaded_file:
+    file_path = f"data/uploaded_files/{uploaded_file.name}"
+
+    if not os.path.exists(file_path):
+        with open(file_path, "wb") as user_file:
+            user_file.write(uploaded_file.getbuffer())
+        index_document(file_path)
+        st.success("Файл добавлен!")
+    else:
+        st.info("Этот файл уже загружен")
+    
 # --- 5. Отображаем всю историю сообщений ---
 # Каждое сообщение — это словарь с полями "role" (user/assistant) и "content".
 for message in st.session_state.messages:
