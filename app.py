@@ -2,8 +2,11 @@ import streamlit as st
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.llms import Ollama
+from index import is_db_empty, index_all_documents
 
-
+# Проверяем наличие документов в базе, если база пуста индексируем все из папки data\
+if is_db_empty():
+    index_all_documents()
 # --- 1. Загружаем всё один раз при запуске приложения ---
 # Streamlit перезапускает скрипт при каждом взаимодействии.
 # Чтобы не перезагружать модель и базу каждый раз, используем кэш.
