@@ -8,6 +8,7 @@ venv/
 
 # Vector DB (can be recreated by running index.py)
 db/
+data/
 
 # VS Code
 .vscode/
