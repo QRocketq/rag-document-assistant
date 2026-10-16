@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
+explore.py
 
 # Virtual Environment
 .venv/
