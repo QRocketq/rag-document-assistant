@@ -5,15 +5,14 @@ from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.llms import Ollama
 from index import is_db_empty, index_all_documents, index_document
 
-# Проверяем наличие документов в базе, если база пуста индексируем все из папки data\
-if is_db_empty():
-    index_all_documents()
-
 # --- 1. Загружаем всё один раз при запуске приложения ---
 # Streamlit перезапускает скрипт при каждом взаимодействии.
 # Чтобы не перезагружать модель и базу каждый раз, используем кэш.
 @st.cache_resource
 def load_components():
+    # Проверяем наличие документов в базе, если база пуста индексируем все из папки data\
+    if is_db_empty():
+        index_all_documents()
     embeddings = OllamaEmbeddings(model="nomic-embed-text")
     vectorstore = Chroma(
         persist_directory="db",
@@ -26,7 +25,7 @@ vectorstore, llm = load_components()
 
 # --- 2. Настраиваем страницу ---
 st.title("Мой RAG-помощник")
-st.caption("Задайте вопрос по документам, который вы загрузили в базу.")
+st.caption("Задайте вопрос по документам, которые вы загрузили в базу.")
 
 # --- 3. Инициализируем историю чата в памяти сессии ---
 # Streamlit хранит данные между перезапусками в st.session_state.
@@ -47,7 +46,13 @@ if uploaded_file:
     if not os.path.exists(file_path):
         with open(file_path, "wb") as user_file:
             user_file.write(uploaded_file.getbuffer())
-        index_document(file_path)
+        with st.status("Индексация файла...", expanded=True) as status:
+            def show_step(text):
+                status.update(label=text)
+                st.write(text)
+            index_document(file_path, show_step)
+            status.update(label="Готово", state="complete")
+        load_components.clear()
         st.success("Файл добавлен!")
     else:
         st.info("Этот файл уже загружен")

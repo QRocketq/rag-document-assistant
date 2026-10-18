@@ -9,52 +9,36 @@ def is_db_empty():
     vectorstore = Chroma(persist_directory="db", embedding_function=embeddings)
     return vectorstore._collection.count() == 0
 
-# Индексация отдельного документа
-def index_document(file_path):
-    loader = Docx2txtLoader(file_path)
-    document = loader.load()
+def split_embedding_documents(documents, on_step=None):
     splitter = RecursiveCharacterTextSplitter(
         chunk_size = 300,
         chunk_overlap = 60
     )
-
-    chunks = splitter.split_documents(document)
-    print(f"Получено кусков: {len(chunks)}")
+    chunks = splitter.split_documents(documents)
+    if on_step:
+        on_step(f"Разбито на {len(chunks)} чанков")
 
     embeddings = OllamaEmbeddings(model="nomic-embed-text")
-
     vectorstore = Chroma(
         persist_directory="db",
         embedding_function=embeddings   
-    )
+        )
     vectorstore.add_documents(chunks)
-    print("Индексация завершена.")
+    if on_step:
+        on_step(f"Записано в базу")
 
+# Индексация отдельного документа
+def index_document(file_path, on_step=None):
+    loader = Docx2txtLoader(file_path)
+    document = loader.load()
+    split_embedding_documents(document, on_step)
+    
 # Индексация всех файлов из папки \data
-def index_all_documents():
+def index_all_documents(on_step=None):
     loader = DirectoryLoader(
         "data/",
         glob="**/*.docx",
         loader_cls=Docx2txtLoader
         )
     documents = loader.load()
-    print(f"Загружено файлов: {len(documents)}")
-
-    # Разбиваем на куски
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=300,
-        chunk_overlap=60
-    )
-    chunks = splitter.split_documents(documents)
-
-    print(f"Получено кусков: {len(chunks)}")
-
-    # Превращаем в векторы и сохраняем
-    embeddings = OllamaEmbeddings(model="nomic-embed-text")
-    vectorstore = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        persist_directory="db"
-    )
-
-    print("Индексация завершена.")
+    split_embedding_documents(documents, on_step)
